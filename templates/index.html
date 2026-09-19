@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendIQ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #050d1f;
+            min-height: 100vh;
+            color: white;
+            padding: 24px 16px;
+        }
+
+        .container { max-width: 1380px; margin: 0 auto; }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 18px;
+            padding: 28px 20px 20px;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 2.4em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #ffd700, #fffbe0, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p { color: rgba(255,255,255,0.65); margin-top: 6px; font-size: 0.95em; }
+
+        /* ── Stats Row ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: transform .2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-icon { font-size: 1.6em; margin-bottom: 8px; }
+        .stat-value { font-size: 1.65em; font-weight: 700; color: #ffd700; }
+        .stat-label { font-size: 0.78em; color: rgba(255,255,255,0.65); margin-top: 4px; }
+
+        /* ── ML Prediction Banner ── */
+        .prediction-banner {
+            background: linear-gradient(90deg, rgba(102,126,234,0.35), rgba(118,75,162,0.35));
+            border: 1px solid rgba(255,255,255,0.20);
+            border-radius: 14px;
+            padding: 14px 22px;
+            margin-bottom: 26px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .prediction-banner .icon { font-size: 1.5em; }
+        .prediction-banner .text { flex: 1; font-size: 0.95em; color: rgba(255,255,255,0.9); }
+        .prediction-banner .value {
+            font-size: 1.3em; font-weight: 700; color: #7ee8a2;
+            white-space: nowrap;
+        }
+
+        /* ── Main grid (form + charts) ── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 22px;
+            margin-bottom: 26px;
+            align-items: start;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.20);
+            border-radius: 20px;
+            padding: 26px;
+        }
+        .card h3 {
+            color: #ffd700;
+            font-size: 1.05em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        /* ── Form ── */
+        .input-group { margin-bottom: 14px; }
+        .input-group label {
+            display: block;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: rgba(255,255,255,0.80);
+            margin-bottom: 5px;
+        }
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 10px 13px;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.14);
+            color: white;
+            font-size: 0.95em;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .input-group input:focus,
+        .input-group select:focus { border-color: #ffd700; }
+        .input-group input::placeholder { color: rgba(255,255,255,0.45); }
+        .input-group select option { background: #1e3c72; color: white; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.92em;
+            font-weight: 600;
+            transition: all .25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.28); }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 5px 12px;
+            font-size: 0.82em;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-danger:hover { transform: scale(1.05); }
+
+        /* ── Status toast ── */
+        .status {
+            display: none;
+            padding: 9px 14px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-size: 0.88em;
+        }
+        .status.success { background: rgba(76,175,80,0.25); border: 1px solid #4caf50; color: #a5d6a7; }
+        .status.error   { background: rgba(244,67,54,0.25);  border: 1px solid #f44336; color: #ef9a9a; }
+
+        /* ── Charts column ── */
+        .charts-col { display: flex; flex-direction: column; gap: 22px; }
+        .chart-card {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.20);
+            border-radius: 20px;
+            padding: 24px;
+        }
+        .chart-card h3 {
+            color: #ffd700;
+            font-size: 1.05em;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .chart-img-wrap {
+            position: relative;
+            min-height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-img-wrap img {
+            width: 100%;
+            border-radius: 10px;
+            display: block;
+        }
+        .chart-placeholder {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        /* ── Spinner ── */
+        .spinner {
+            display: inline-block;
+            width: 26px; height: 26px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Expenses table ── */
+        .expenses-section {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.20);
+            border-radius: 20px;
+            padding: 26px;
+        }
+        .expenses-section h3 {
+            color: #ffd700;
+            font-size: 1.05em;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .table-wrap { overflow-x: auto; max-height: 380px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.10); white-space: nowrap; }
+        th {
+            background: rgba(255,255,255,0.10);
+            color: #ffd700;
+            font-size: 0.85em;
+            font-weight: 600;
+            position: sticky; top: 0;
+        }
+        tr:hover { background: rgba(255,255,255,0.06); }
+        .category-tag {
+            padding: 3px 10px;
+            background: rgba(255,255,255,0.16);
+            border-radius: 20px;
+            font-size: 0.82em;
+        }
+        .empty-row { text-align: center; color: rgba(255,255,255,0.4); padding: 28px; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 6px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 520px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .header h1 { font-size: 1.7em; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ── Header ── -->
+    <div class="header">
+        <h1><i class="fas fa-brain"></i> SpendIQ</h1>
+        <p>Smart spending insights powered by Matplotlib · Seaborn · Scikit-learn</p>
+    </div>
+
+    <!-- ── Quick Stats ── -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="statTotal">₹0</div>
+            <div class="stat-label">Total This Month</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" id="statAvg">₹0</div>
+            <div class="stat-label">Daily Average</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="statTop">—</div>
+            <div class="stat-label">Top Category</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-value" id="statCount">0</div>
+            <div class="stat-label">Entries This Month</div>
+        </div>
+    </div>
+
+    <!-- ── ML Prediction ── -->
+    <div class="prediction-banner">
+        <span class="icon">🤖</span>
+        <span class="text">
+            <strong>Scikit-learn Prediction</strong><br>
+            <span id="predictionMsg" style="font-size:.88em;color:rgba(255,255,255,.7);">Loading prediction…</span>
+        </span>
+        <span class="value" id="predictionValue"></span>
+    </div>
+
+    <!-- ── Form + Charts ── -->
+    <div class="main-grid">
+
+        <!-- Add Expense Form -->
+        <div class="card">
+            <h3><i class="fas fa-plus-circle"></i> Add New Expense</h3>
+            <form id="expenseForm">
+                <div class="input-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="amount" step="0.01" min="0" placeholder="e.g. 250.00" required>
+                </div>
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="category" required>
+                        <option value="">Select category</option>
+                        <option value="Food">🍽️ Food</option>
+                        <option value="Travel">✈️ Travel</option>
+                        <option value="Shopping">🛒 Shopping</option>
+                        <option value="Education">📚 Education</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Healthcare">⚕️ Healthcare</option>
+                        <option value="Utilities">💡 Utilities</option>
+                        <option value="Others">📦 Others</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <input type="text" id="description" placeholder="Brief note (optional)">
+                </div>
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </form>
+            <div id="statusMsg" class="status"></div>
+        </div>
+
+        <!-- Charts column -->
+        <div class="charts-col">
+
+            <!-- Weekly chart (Seaborn line) -->
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-line"></i> Weekly Spending Trend</h3>
+                <div class="chart-img-wrap" id="weeklyWrap">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- Monthly chart (Seaborn bar) -->
+            <div class="chart-card">
+                <h3><i class="fas fa-chart-bar"></i> Monthly Category Breakdown</h3>
+                <div class="chart-img-wrap" id="monthlyWrap">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Expenses Table ── -->
+    <div class="expenses-section">
+        <h3><i class="fas fa-list-ul"></i> Recent Expenses</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="expensesBody">
+                    <tr><td colspan="5" class="empty-row">Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+// ── Helpers ──────────────────────────────────────────────
+function fmt(amount) {
+    return '₹' + parseFloat(amount).toFixed(2);
+}
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3500);
+}
+
+function clearForm() {
+    document.getElementById('expenseForm').reset();
+    setTodayDate();
+}
+
+function setTodayDate() {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    document.getElementById('date').value = `${y}-${m}-${d}`;
+}
+
+// ── Load charts (Matplotlib/Seaborn images from Flask) ──
+async function loadWeeklyChart() {
+    const wrap = document.getElementById('weeklyWrap');
+    wrap.innerHTML = '<div class="spinner"></div>';
+    try {
+        const res = await fetch('/get_weekly_chart');
+        const data = await res.json();
+        if (data.image) {
+            wrap.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Weekly trend">`;
+        } else {
+            wrap.innerHTML = '<p class="chart-placeholder">No data yet. Add some expenses!</p>';
+        }
+    } catch {
+        wrap.innerHTML = '<p class="chart-placeholder">Could not load chart.</p>';
+    }
+}
+
+async function loadMonthlyChart() {
+    const wrap = document.getElementById('monthlyWrap');
+    wrap.innerHTML = '<div class="spinner"></div>';
+    try {
+        const res = await fetch('/get_monthly_chart');
+        const data = await res.json();
+        if (data.image) {
+            wrap.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Monthly breakdown">`;
+        } else {
+            wrap.innerHTML = '<p class="chart-placeholder">No data yet for this month.</p>';
+        }
+    } catch {
+        wrap.innerHTML = '<p class="chart-placeholder">Could not load chart.</p>';
+    }
+}
+
+// ── Load stats ──────────────────────────────────────────
+async function loadStats() {
+    try {
+        const res = await fetch('/get_stats');
+        const data = await res.json();
+        document.getElementById('statTotal').textContent  = fmt(data.total_month || 0);
+        document.getElementById('statAvg').textContent    = fmt(data.avg_daily   || 0);
+        document.getElementById('statTop').textContent    = data.top_category    || '—';
+        document.getElementById('statCount').textContent  = data.count_month     || 0;
+    } catch { /* silently fail */ }
+}
+
+// ── Load ML prediction ──────────────────────────────────
+async function loadPrediction() {
+    try {
+        const res = await fetch('/get_prediction');
+        const data = await res.json();
+        const msg  = document.getElementById('predictionMsg');
+        const val  = document.getElementById('predictionValue');
+
+        if (data.prediction !== null) {
+            msg.textContent = 'Based on your last 30 days using Linear Regression:';
+            val.textContent = fmt(data.prediction) + ' next week';
+        } else {
+            msg.textContent = data.message || 'Add more expenses across multiple days to unlock predictions.';
+            val.textContent = '';
+        }
+    } catch {
+        document.getElementById('predictionMsg').textContent = 'Prediction unavailable.';
+    }
+}
+
+// ── Load expenses table ─────────────────────────────────
+async function loadExpenses() {
+    try {
+        const res = await fetch('/get_expenses');
+        const expenses = await res.json();
+        const tbody = document.getElementById('expensesBody');
+
+        if (!expenses.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No expenses yet. Add your first one!</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        expenses.forEach(exp => {
+            const tr = document.createElement('tr');
+            const dateStr = new Date(exp.date + 'T00:00:00').toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+            tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td style="color:#ffd700;font-weight:700;">${fmt(exp.amount)}</td>
+                <td><span class="category-tag">${exp.category}</span></td>
+                <td>${exp.description || '—'}</td>
+                <td>
+                    <button class="btn-danger" onclick="deleteExpense(${exp.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch {
+        document.getElementById('expensesBody').innerHTML =
+            '<tr><td colspan="5" class="empty-row">Error loading expenses.</td></tr>';
+    }
+}
+
+// ── Delete expense ──────────────────────────────────────
+async function deleteExpense(id) {
+    if (!confirm('Delete this expense?')) return;
+    try {
+        const res = await fetch(`/delete_expense/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showStatus('Expense deleted!', 'success');
+            refreshAll();
+        } else {
+            showStatus('Error: ' + data.message, 'error');
+        }
+    } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+    }
+}
+
+// ── Form submit ─────────────────────────────────────────
+document.getElementById('expenseForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const payload = {
+        amount:      document.getElementById('amount').value,
+        category:    document.getElementById('category').value,
+        description: document.getElementById('description').value,
+        date:        document.getElementById('date').value
+    };
+    try {
+        const res = await fetch('/add_expense', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showStatus('Expense saved!', 'success');
+            clearForm();
+            refreshAll();
+        } else {
+            showStatus('Error: ' + data.message, 'error');
+        }
+    } catch (e) {
+        showStatus('Error: ' + e.message, 'error');
+    }
+});
+
+// ── Refresh everything ──────────────────────────────────
+function refreshAll() {
+    loadExpenses();
+    loadWeeklyChart();
+    loadMonthlyChart();
+    loadStats();
+    loadPrediction();
+}
+
+// ── Init ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    setTodayDate();
+    refreshAll();
+});
+</script>
+</body>
+</html>
